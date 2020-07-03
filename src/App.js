@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   SafeAreaView,
@@ -10,46 +10,67 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import api from "./services/api";
+
 export default function App() {
+  const [repositories, setRepositories] = useState([]);
+
+  useEffect(() => {
+    api.get("/repositories").then((response) => {
+      setRepositories(response.data);
+    });
+  }, []);
+
   async function handleLikeRepository(id) {
-    // Implement "Like Repository" functionality
+    await api.post(`repositories/${id}/like`);
+
+    const repositoryIndex = repositories.findIndex(
+      (repository) => repository.id === id
+    );
+
+    repositories[repositoryIndex].likes += 1;
+
+    setRepositories([...repositories]);
   }
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#7159c1" />
       <SafeAreaView style={styles.container}>
-        <View style={styles.repositoryContainer}>
-          <Text style={styles.repository}>Repository 1</Text>
-
-          <View style={styles.techsContainer}>
-            <Text style={styles.tech}>
-              ReactJS
-            </Text>
-            <Text style={styles.tech}>
-              Node.js
-            </Text>
-          </View>
-
-          <View style={styles.likesContainer}>
-            <Text
-              style={styles.likeText}
-              // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
-              testID={`repository-likes-1`}
-            >
-              3 curtidas
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => handleLikeRepository(1)}
-            // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
-            testID={`like-button-1`}
-          >
-            <Text style={styles.buttonText}>Curtir</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>Repositorios</Text>
+        <FlatList
+          data={repositories}
+          keyExtractor={repositories.id}
+          renderItem={({ item: repository }) => (
+            <>
+              <View style={styles.repositoryContainer}>
+                <Text style={styles.repository}>{repository.title}</Text>
+                {repository.techs.map((tech) => (
+                  <View style={styles.techsContainer}>
+                    <Text style={styles.tech}>{tech}</Text>
+                  </View>
+                ))}
+                <View style={styles.likesContainer}>
+                  <Text
+                    style={styles.likeText}
+                    // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
+                    testID={`repository-likes-${repository.id}`}
+                  >
+                    {repository.likes} curtidas
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handleLikeRepository(repository.id)}
+                  // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
+                  testID={`like-button-${repository.id}`}
+                >
+                  <Text style={styles.buttonText}>Curtir</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        />
       </SafeAreaView>
     </>
   );
@@ -65,6 +86,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     backgroundColor: "#fff",
     padding: 20,
+    borderRadius: 8,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    alignSelf: "center",
+    margin: 10,
+    color: "#fff",
   },
   repository: {
     fontSize: 32,
@@ -75,7 +104,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tech: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
     marginRight: 10,
     backgroundColor: "#04d361",
@@ -95,6 +124,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 10,
+    borderRadius: 4,
   },
   buttonText: {
     fontSize: 14,
